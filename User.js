@@ -1,3 +1,5 @@
+const puppeteer = require("puppeteer");
+
 function User(profilLink, offer, offers) {
   this.profilLink = profilLink;
   this.offers = [];

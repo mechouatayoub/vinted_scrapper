@@ -34,11 +34,11 @@ async function getVintedMainPage() {
       return document.body.scrollHeight;
     });
 
-    // await loadFullPage(page);
+    await loadFullPage(page);
 
     console.log("Début de récupération des balises");
 
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(4000);
     //Récupérer les balises
 
     let users = await scrapMainPage(page);
@@ -81,12 +81,15 @@ async function scrapMainPage(page) {
 
   let offersContainer = await page.$(offersContainerMarkUp);
   //récupérer les dressing vitrines
+  let usersFound = [];
   try {
     let usersByPromotedUsers = await getPromotedUsers(offersContainer);
     let usersByPromotedOffers = await getPromotedOffers(offersContainer);
+    usersFound = [...usersByPromotedUsers, ...usersByPromotedOffers];
   } catch (error) {
     console.log(error.message);
   }
+  return usersFound;
 }
 
 async function getPromotedUsers(offersContainer) {
@@ -98,21 +101,6 @@ async function getPromotedUsers(offersContainer) {
     let promotedUsers = await offersContainer.$$(promotedUsersMarkUp);
 
     for (let i = 0; i < promotedUsers.length; i++) {
-      //récupération de l'avatar de l'utilisateur
-      //   let userAvatarMarkUp = "div.Cell_image__3kOWg img";
-      //   let userHasAvatar = await promotedUsers[i].$eval(
-      //     userAvatarMarkUp,
-      //     (element) => element.hasAttribute("src")
-      //   );
-      //   let userAvatar = null;
-      //   if (userHasAvatar) {
-      //     userAvatar = await promotedUsers[i].$eval(userAvatarMarkUp, (element) =>
-      //       element.getAttribute("src")
-      //     );
-      //   }
-
-      //   console.log(userAvatar);
-
       //Récupération du lien vers le profil de l'utilisateur
       let userProfilMarkUp = "div.Cell_image__3kOWg a";
       let userProfilMarkUpHasLink = await promotedUsers[i].$eval(
@@ -125,45 +113,12 @@ async function getPromotedUsers(offersContainer) {
           userProfilMarkUp,
           (element) => element.getAttribute("href")
         );
+        console.log(userProfilLink);
+        let user = new User(userProfilLink);
+        console.log(user);
+        users.push(user);
+        console.log(users);
       }
-      console.log(userProfilLink);
-
-      //   //Récupération du rating de l'utilisateur
-      //   let ratingMarkUp = "div.Rating_star__4M91J";
-      //   let ratingScore = await (await promotedUsers[i].$$(ratingMarkUp)).length;
-      //   console.log(ratingScore);
-
-      //   //Récupération du nombre d'évaluations
-      //   let assessmentsCountMarkUp =
-      //     "div.Rating_label__Do7Nn span.Text_text__QBn4-";
-      //   let assessmentsCount = await promotedUsers[i].$eval(
-      //     assessmentsCountMarkUp,
-      //     (element) => element.innerHTML
-      //   );
-
-      //   console.log(assessmentsCount);
-      //   //récupération des informations des offres promus pour un utilisateur
-      //   let userPromotedOffersMarkUp = "div.ItemBox_box__2xrHH";
-      //   let userPromotedOffers = await promotedUsers[i].$$(
-      //     userPromotedOffersMarkUp
-      //   );
-      //   let offers = [];
-      //   console.log(userPromotedOffers);
-      //   for (let offer of userPromotedOffers) {
-      //     let offerMarkup = "a";
-      //     let offerHasLink = await offer.$eval(offerMarkup, (element) =>
-      //       element.hasAttribute("href")
-      //     );
-      //     let userOfferLink = null;
-      //     if (offerHasLink) {
-      //       userOfferLink = await offer.$eval(offerMarkup, (element) =>
-      //         element.getAttribute("href")
-      //       );
-      //       offers.push("https://www.vinted.fr" + userOfferLink);
-      //     }
-      //     console.log(userOfferLink);
-      //   }
-      //   console.log(offers);
     }
   } catch (error) {
     console.log(error.message);
@@ -172,6 +127,7 @@ async function getPromotedUsers(offersContainer) {
 }
 
 async function getPromotedOffers(offersContainer) {
+  let users = [];
   try {
     let promotedOffersMarkUp = "div.feed-grid__item--one-fifth";
     let promotedOffers = await offersContainer.$$(promotedOffersMarkUp);
@@ -189,12 +145,17 @@ async function getPromotedOffers(offersContainer) {
           userProfilMarkup,
           (element) => element.getAttribute("href")
         );
+        console.log(userProfilLink);
+        let user = new User(userProfilLink);
+        console.log(user);
+        users.push(user);
+        console.log(users);
       }
-      console.log(userProfilLink);
     }
   } catch (error) {
     console.log(error.message);
   }
+  return users;
 }
 
 async function loadFullPage(page) {

@@ -1,6 +1,7 @@
 const puppeteer = require("puppeteer");
 const User = require("./User.js");
-const Offer = require("./Offer.js");
+
+const FileSystem = require("fs");
 
 const ADDRESS = "https://www.vinted.fr/";
 
@@ -42,26 +43,15 @@ async function getVintedMainPage() {
     //Récupérer les balises
 
     let users = await scrapMainPage(page);
+    FileSystem.writeFile(
+      "UsersLinks.json",
+      JSON.stringify(users, null, 2),
+      (error) => {
+        console.log(error.message);
+      }
+    );
 
     console.log("fin de récupération des balises");
-
-    //récupérer les offres en tableau
-    // console.log("Début de récupération des balises");
-    // let offers = await page.$$("div.feed-grid__item--one-fifth");
-    // console.log(offers);
-    // let offer = await offers[1].$$(".closet-container");
-
-    // console.log(offer);
-
-    // console.log("fin de récupération des balises");
-
-    //Parser les balises
-
-    //Récupérer les images
-
-    //Insérer les datas dans cloudinary
-
-    //Insérer les datas dans atlas
 
     console.log("fin");
     await browser.close();
@@ -70,8 +60,8 @@ async function getVintedMainPage() {
   } catch (error) {
     console.log("Une erreur est survenue");
     console.log(error.message);
-    await browser.close();
   }
+  await browser.close();
 }
 
 // Scraps the main page

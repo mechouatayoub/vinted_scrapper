@@ -1,0 +1,6 @@
+{
+  "MAX_USERS": 2,
+  "MAX_OFFERS_PER_USER": 3,
+  "MAX_IMAGES_PER_OFFER": 2,
+  "VINTED_WELCOME_PAGE": "https://www.vinted.fr/"
+}

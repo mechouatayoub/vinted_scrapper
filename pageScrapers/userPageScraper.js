@@ -1,13 +1,17 @@
 const puppeteer = require("puppeteer");
-const User = require("./User.js");
-const Offer = require("./Offer.js");
+const User = require("../objects/User.js");
+const Offer = require("../objects/Offer.js");
+const PARAMS = require("../parameters.json");
 
 // const ADDRESS = "https://www.vinted.fr/member/17295984-emma0626";
+
+// userPageScraper(ADDRESS);
 
 async function userPageScraper(address) {
   console.log("création du browser");
   let browser = await puppeteer.launch({ headless: false });
   let user = null;
+  console.log("récupération du user:", address);
   try {
     let page = await browser.newPage();
     console.log("nouvelle page créée");
@@ -22,12 +26,60 @@ async function userPageScraper(address) {
 
     console.log("chargement terminé");
     user = await startScraping(page, address);
-    console.log(user);
+    // console.log(user);
   } catch (error) {
     console.log("Une erreur est survenue");
     console.log(error.message);
   }
   await browser.close();
+
+  return user;
+}
+
+async function startScraping(fromUserPage, address) {
+  let user = new User(address);
+  try {
+    //Récupération du profil de l'utilisateur
+    //initialisation d'un objet utilisateur
+    console.log("-> Début de récupération des données pour l'utilisateur");
+
+    //Récupération de l'avatar
+    user.avatarLink = await getAvatarLink(fromUserPage);
+
+    // Récupération de la notation moyenne
+    user.averageScore = await getAverageScore(fromUserPage);
+
+    // Récupération du nombre d'évaluations
+    user.assessmentsCount = await getAssessmentsCount(fromUserPage);
+
+    //Récupération de la localisation
+    let location = await getUserLocation(fromUserPage);
+    user.city = location.city;
+    user.country = location.country;
+
+    //Récupération du nombre de followers
+    user.followersCount = await getFollowersCount(fromUserPage);
+
+    //Récupération du nombre d'abonnements
+    user.followingsCount = await getFollowingsCount(fromUserPage);
+
+    //Récupération de la date de dernière connexion
+    let lastConnection = await getLastConnection(fromUserPage);
+    user.lastConnectionDate = lastConnection.date;
+    user.lastConnectionSince = lastConnection.since;
+
+    //Récupération de l'ensemble des vérifications de profil
+    user.verifications = await getVerified(fromUserPage);
+
+    //récupérer la description du profil
+    user.description = await getDescription(fromUserPage);
+
+    // Récupération des liens des offres possibles
+    user.offers = await getOffersLinks(fromUserPage);
+    // console.log("-> Fin de récupération des données pour l'utilisateur");
+  } catch (error) {
+    console.log(error.message);
+  }
 
   return user;
 }
@@ -56,7 +108,7 @@ async function getAvatarLink(page) {
       error.message
     );
   }
-  console.log("--> fin de récupération de l'avatar");
+  // console.log("--> fin de récupération de l'avatar");
 
   return avatarLink;
 }
@@ -78,7 +130,7 @@ async function getAverageScore(page) {
       error.message
     );
   }
-  console.log("--> fin de récupération de la note moyenne");
+  // console.log("--> fin de récupération de la note moyenne");
 
   return averageScore;
 }
@@ -104,7 +156,7 @@ async function getAssessmentsCount(page) {
       error.message
     );
   }
-  console.log("--> fin de récupération du nombre d'évaluations");
+  // console.log("--> fin de récupération du nombre d'évaluations");
   return assessmentsCount;
 }
 
@@ -130,14 +182,14 @@ async function getUserLocation(page) {
         location.country = locationString;
       }
     }
-    console.log("end of location");
+    // console.log("end of location");
   } catch (error) {
     console.log(
       "Impossible de récupérer la localisation de l'utilisateur car ",
       error.message
     );
   }
-  console.log("--> fin de récupération de la localisation de l'utilisateur");
+  // console.log("--> fin de récupération de la localisation de l'utilisateur");
   return location;
 }
 
@@ -159,7 +211,7 @@ async function getFollowersCount(page) {
       error.message
     );
   }
-  console.log("--> fin de récupération du nombre de followers");
+  // console.log("--> fin de récupération du nombre de followers");
   return followersCount;
 }
 
@@ -176,14 +228,14 @@ async function getFollowingsCount(page) {
       );
       followingsCount = Number(subscriptions);
     }
-    console.log("end of subscriptions");
+    // console.log("end of subscriptions");
   } catch (error) {
     console.log(
       "Impossible de récupérer le nombre de followings de l'utilisateur car ",
       error.message
     );
   }
-  console.log("--> fin de récupération du nombre de followings");
+  // console.log("--> fin de récupération du nombre de followings");
   return followingsCount;
 }
 
@@ -206,14 +258,14 @@ async function getLastConnection(page) {
       lastConnection.date = dateString.split(", ").join("T"); //checker la conversion
       lastConnection.since = dateLastConnection;
     }
-    console.log("end of connexion date");
+    // console.log("end of connexion date");
   } catch (error) {
     console.log(
       "Impossible de récupérer la dernière connexion de l'utilisateur car ",
       error.message
     );
   }
-  console.log("--> fin de récupération de la dernière connexion");
+  // console.log("--> fin de récupération de la dernière connexion");
   return lastConnection;
 }
 
@@ -235,7 +287,7 @@ async function getVerified(page) {
       error.message
     );
   }
-  console.log("--> fin de récupération des vérifications de profil ");
+  // console.log("--> fin de récupération des vérifications de profil ");
   return verifications;
 }
 async function getDescription(page) {
@@ -292,7 +344,7 @@ async function getDescription(page) {
       error.message
     );
   }
-  console.log("--> fin de récupération de la description du profil");
+  // console.log("--> fin de récupération de la description du profil");
   return description;
 }
 
@@ -308,9 +360,12 @@ async function getOffersLinks(page) {
       if (offerHasLink) {
         let link = await offerLink.evaluate((el) => el.getAttribute("href"));
         // offers.push(link);
-        console.log(offers);
+        // console.log(offers);
         offers.push(new Offer("https://www.vinted.fr" + link));
       }
+    }
+    if (offers.length > PARAMS.MAX_OFFERS_PER_USER) {
+      offers = offers.slice(0, PARAMS.MAX_OFFERS_PER_USER);
     }
   } catch (error) {
     console.log(
@@ -318,57 +373,8 @@ async function getOffersLinks(page) {
       error.message
     );
   }
-  console.log("--> fin de récupération des offres ");
+  // console.log("--> fin de récupération des offres ");
   return offers;
 }
 
-async function startScraping(fromUserPage, address) {
-  let user = new User(address);
-  try {
-    //Récupération du profil de l'utilisateur
-    //initialisation d'un objet utilisateur
-    console.log("-> Début de récupération des données pour l'utilisateur");
-
-    //Récupération de l'avatar
-    user.avatarLink = await getAvatarLink(fromUserPage);
-
-    // Récupération de la notation moyenne
-    user.averageScore = await getAverageScore(fromUserPage);
-
-    // Récupération du nombre d'évaluations
-    user.assessmentsCount = await getAssessmentsCount(fromUserPage);
-
-    //Récupération de la localisation
-    let location = await getUserLocation(fromUserPage);
-    user.city = location.city;
-    user.country = location.country;
-
-    //Récupération du nombre de followers
-    user.followersCount = await getFollowersCount(fromUserPage);
-
-    //Récupération du nombre d'abonnements
-    user.followingsCount = await getFollowingsCount(fromUserPage);
-
-    //Récupération de la date de dernière connexion
-    let lastConnection = await getLastConnection(fromUserPage);
-    user.lastConnectionDate = lastConnection.date;
-    user.lastConnectionSince = lastConnection.since;
-
-    //Récupération de l'ensemble des vérifications de profil
-    user.verifications = await getVerified(fromUserPage);
-
-    //récupérer la description du profil
-    user.description = await getDescription(fromUserPage);
-
-    // Récupération des liens des offres possibles
-    user.offers = await getOffersLinks(fromUserPage);
-    console.log("-> Fin de récupération des données pour l'utilisateur");
-  } catch (error) {
-    console.log(error.message);
-  }
-
-  return user;
-}
-
-// userPageScrapper();
 module.exports = userPageScraper;

@@ -1,8 +1,56 @@
 const puppeteer = require("puppeteer");
-const Offer = require("./Offer.js");
+const Offer = require("../objects/Offer.js");
+const PARAMS = require("../parameters.json");
 
-const address =
-  "https://www.vinted.fr/femmes/sacs/sacs-a-main/574233378-sac-cabas-emporio-armani";
+// const address =
+//   "https://www.vinted.fr/femmes/sacs/sacs-a-main/574233378-sac-cabas-emporio-armani";
+
+// scrapOfferPage(address);
+
+async function scrapOfferPage(address) {
+  let offer = null;
+  const browser = await puppeteer.launch({ headless: false });
+  console.log("Récupération de l'offre:", address);
+
+  try {
+    let page = await browser.newPage();
+    console.log("nouvelle page ouverte");
+
+    await page.setViewport({ width: 1200, height: 800 });
+    console.log("view port set");
+
+    await page.goto(address, {
+      waitUntil: "networkidle2",
+    });
+    await page.waitForTimeout(4000);
+
+    console.log("chargement de la page de l'offre terminé: ", address);
+    offer = await startScrapping(page, address);
+    // console.log(offer);
+  } catch (error) {
+    console.log(error.message);
+  }
+
+  await browser.close();
+  return offer;
+}
+
+async function startScrapping(fromOfferPage, address) {
+  console.log("-> Début de scraping de l'offre");
+  let offer = new Offer(address);
+  try {
+    offer.pictures = await getPicturesLink(fromOfferPage);
+    offer.basePriceEuros = await getBasePrice(fromOfferPage);
+    offer.shippingPrices = await getShippingPrices(fromOfferPage);
+    offer.descriptors = await getDescriptors(fromOfferPage);
+    offer.title = await getTitle(fromOfferPage);
+    offer.description = await getDescription(fromOfferPage);
+  } catch (error) {
+    console.log(error.message);
+  }
+  // console.log("-> Fin de scraping de l'offre");
+  return offer;
+}
 
 async function getPicturesLink(page) {
   console.log("--> début de récupération des liens vers les images");
@@ -17,7 +65,11 @@ async function getPicturesLink(page) {
       );
       pictureLink && picturesLinks.push(pictureLink);
     }
-    console.log("--> fin de récupération des liens vers les images");
+    if (picturesLinks.length > PARAMS.MAX_IMAGES_PER_OFFER) {
+      picturesLinks = picturesLinks.slice(0, PARAMS.MAX_IMAGES_PER_OFFER);
+    }
+
+    // console.log("--> fin de récupération des liens vers les images");
   } catch (error) {
     console.log(
       "Impossible de récupérer les liens vers les images car ",
@@ -43,7 +95,7 @@ async function getBasePrice(page) {
   } catch (error) {
     console.log("Impossible de récupérer le prix de base car ", error.message);
   }
-  console.log("--> fin de récupération du prix de base");
+  // console.log("--> fin de récupération du prix de base");
 
   return basePrice;
 }
@@ -65,7 +117,7 @@ async function getShippingPrices(page) {
         let shippingPriceString = await shippingDatasElements[1].evaluate(
           (el) => el.innerText
         );
-        console.log(shippingPriceString);
+        // console.log(shippingPriceString);
         let re = new RegExp(String.fromCharCode(160), "g");
         let shippingPrice = {
           provider: shippingProvider,
@@ -82,7 +134,7 @@ async function getShippingPrices(page) {
       error.message
     );
   }
-  console.log("--> fin de récupération des prix d'acheminement");
+  // console.log("--> fin de récupération des prix d'acheminement");
 
   return shippingPrices;
 }
@@ -134,7 +186,7 @@ async function getDescriptors(page) {
       error.message
     );
   }
-  console.log("--> fin de récupération des propriétés de l'objet en vente");
+  // console.log("--> fin de récupération des propriétés de l'objet en vente");
 
   return descriptors;
 }
@@ -154,7 +206,7 @@ async function getTitle(page) {
       error.message
     );
   }
-  console.log("--> fin de récupération le titre de l'offre");
+  // console.log("--> fin de récupération le titre de l'offre");
 
   return title;
 }
@@ -174,54 +226,9 @@ async function getDescription(page) {
       error.message
     );
   }
-  console.log("--> fin de récupération de la description globale");
+  // console.log("--> fin de récupération de la description globale");
 
   return description;
 }
-async function startScrapping(fromOfferPage, address) {
-  console.log("-> Début de scraping de l'offre");
-  let offer = new Offer(address);
-  try {
-    offer.pictures = await getPicturesLink(fromOfferPage);
-    offer.basePriceEuros = await getBasePrice(fromOfferPage);
-    offer.shippingPrices = await getShippingPrices(fromOfferPage);
-    offer.descriptors = await getDescriptors(fromOfferPage);
-    offer.title = await getTitle(fromOfferPage);
-    offer.description = await getDescription(fromOfferPage);
-  } catch (error) {
-    console.log(error.message);
-  }
-  console.log("-> Fin de scraping de l'offre");
-  return offer;
-}
-
-async function scrapOfferPage(address) {
-  let offer = null;
-  const browser = await puppeteer.launch({ headless: false });
-
-  try {
-    let page = await browser.newPage();
-    console.log("nouvelle page ouverte");
-
-    await page.setViewport({ width: 1200, height: 800 });
-    console.log("view port set");
-
-    await page.goto(address, {
-      waitUntil: "networkidle2",
-    });
-    await page.waitForTimeout(4000);
-
-    console.log("chargement de la page de l'offre terminé: ", address);
-    offer = await startScrapping(page, address);
-    console.log(offer);
-  } catch (error) {
-    console.log(error.message);
-  }
-
-  await browser.close();
-  return offer;
-}
-
-scrapOfferPage(address);
 
 module.exports = scrapOfferPage;

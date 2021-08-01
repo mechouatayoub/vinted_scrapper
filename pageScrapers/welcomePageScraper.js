@@ -1,16 +1,19 @@
 const puppeteer = require("puppeteer");
-const User = require("./User.js");
+const User = require("../objects/User.js");
+const PARAMS = require("../parameters.json");
 
 const FileSystem = require("fs");
 
-const ADDRESS = "https://www.vinted.fr/";
+const ADDRESS = PARAMS.VINTED_WELCOME_PAGE ?? "https://www.vinted.fr/";
+// getVintedMainPage();
 
 async function getVintedMainPage() {
   console.log("initalisation du get");
-  try {
-    console.log("création du browser");
-    let browser = await puppeteer.launch({ headless: false });
+  let users = [];
 
+  console.log("création du browser");
+  let browser = await puppeteer.launch({ headless: false });
+  try {
     let page = await browser.newPage();
     console.log("nouvelle page créée");
 
@@ -42,19 +45,20 @@ async function getVintedMainPage() {
     await page.waitForTimeout(4000);
     //Récupérer les balises
 
-    let users = await scrapMainPage(page);
+    users = await scrapMainPage(page);
     FileSystem.writeFile(
       "UsersLinks.json",
       JSON.stringify(users, null, 2),
       (error) => {
-        console.log(error.message);
+        console.log(
+          "Une erreur est survenur lors de l'écriture du fichier userslinks.js"
+        );
       }
     );
 
     console.log("fin de récupération des balises");
 
     console.log("fin");
-    await browser.close();
     console.log("browser fermé");
     //
   } catch (error) {
@@ -62,6 +66,7 @@ async function getVintedMainPage() {
     console.log(error.message);
   }
   await browser.close();
+  return users;
 }
 
 // Scraps the main page
@@ -76,9 +81,13 @@ async function scrapMainPage(page) {
     let usersByPromotedUsers = await getPromotedUsers(offersContainer);
     let usersByPromotedOffers = await getPromotedOffers(offersContainer);
     usersFound = clean([...usersByPromotedUsers, ...usersByPromotedOffers]);
+    if (usersFound.length > PARAMS.MAX_USERS) {
+      usersFound = usersFound.slice(0, PARAMS.MAX_USERS);
+    }
   } catch (error) {
     console.log(error.message);
   }
+  // console.log(usersFound);
   return usersFound;
 }
 function clean(users) {
@@ -122,11 +131,11 @@ async function getPromotedUsers(offersContainer) {
           userProfilMarkUp,
           (element) => element.getAttribute("href")
         );
-        console.log(userProfilLink);
+        // console.log(userProfilLink);
         let user = new User(userProfilLink);
-        console.log(user);
+        // console.log(user);
         users.push(user);
-        console.log(users);
+        // console.log(users);
       }
     }
   } catch (error) {
@@ -140,9 +149,9 @@ async function getPromotedOffers(offersContainer) {
   try {
     let promotedOffersMarkUp = "div.feed-grid__item--one-fifth";
     let promotedOffers = await offersContainer.$$(promotedOffersMarkUp);
-    console.log(promotedOffers);
+    // console.log(promotedOffers);
     for (let promotedOffer of promotedOffers) {
-      console.log(promotedOffer);
+      // console.log(promotedOffer);
       let userProfilMarkup = "div.ItemBox_owner__3kopM a";
       let userHasProfilLink = await promotedOffer.$eval(
         userProfilMarkup,
@@ -154,11 +163,11 @@ async function getPromotedOffers(offersContainer) {
           userProfilMarkup,
           (element) => element.getAttribute("href")
         );
-        console.log(userProfilLink);
+        // console.log(userProfilLink);
         let user = new User(userProfilLink);
-        console.log(user);
+        // console.log(user);
         users.push(user);
-        console.log(users);
+        // console.log(users);
       }
     }
   } catch (error) {
@@ -219,7 +228,5 @@ async function loadFullPage(page) {
     console.log(`Fin du scroll numéro ${scrollsCount}`);
   }
 }
-
-getVintedMainPage();
 
 module.exports = getVintedMainPage;

@@ -1,6 +1,6 @@
-const welcomeScraper = require("./welcomePageScraper.js");
-const userPageScraper = require("./userPageScraper.js");
-// const users = require("./UsersLinks.json");
+const welcomeScraper = require("./pageScrapers/welcomePageScraper.js");
+const userPageScraper = require("./pageScrapers/userPageScraper.js");
+const offerPageScraper = require("./pageScrapers/offerPageScraper.js");
 const FileSystem = require("fs");
 
 async function main() {
@@ -9,16 +9,21 @@ async function main() {
 
   try {
     //appeller le welcome scraper
-    let users = welcomeScraper();
+
+    let users = await welcomeScraper();
 
     //appeller le user scraper
 
     let j = 0;
     for (let user of users) {
-      if (j === 1) {
-        break;
-      }
       let updatedUser = await userPageScraper(user.profilLink);
+      //Appel le scrapper d'offres
+      let updatedOffers = [];
+      for (let offer of updatedUser.offers) {
+        let updatedOffer = await offerPageScraper(offer.link);
+        updatedOffers.push(updatedOffer);
+      }
+      updatedUser.offers = updatedOffers;
       updatedUsers.push(updatedUser);
       let timeSeed = Math.trunc(Math.random() * 3000);
       setTimeout(() => {

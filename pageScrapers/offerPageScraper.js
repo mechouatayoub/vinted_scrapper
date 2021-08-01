@@ -1,6 +1,6 @@
 const puppeteer = require("puppeteer");
 const Offer = require("../objects/Offer.js");
-const PARAMS = require("../parameters.json");
+const PARAMS = require("../settings/parameters.json");
 
 // const address =
 //   "https://www.vinted.fr/femmes/sacs/sacs-a-main/574233378-sac-cabas-emporio-armani";

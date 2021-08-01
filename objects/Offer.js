@@ -6,6 +6,7 @@ function Offer(link) {
   this.descriptors = [];
   this.title = null;
   this.description = null;
+  this.comments = [];
 }
 
 module.exports = Offer;

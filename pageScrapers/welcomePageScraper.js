@@ -1,8 +1,8 @@
 const puppeteer = require("puppeteer");
 const User = require("../objects/User.js");
-const PARAMS = require("../parameters.json");
+const PARAMS = require("../settings/parameters.json");
 
-const FileSystem = require("fs");
+// const FileSystem = require("fs");
 
 const ADDRESS = PARAMS.VINTED_WELCOME_PAGE ?? "https://www.vinted.fr/";
 // getVintedMainPage();
@@ -25,20 +25,20 @@ async function getVintedMainPage() {
 
     await page.click("#onetrust-accept-btn-handler");
     console.log("cookie accepté");
-    await page.evaluate(() => {
-      window.scrollTo(0, document.body.scrollHeight);
-      return document.body.scrollHeight;
-    });
-    await page.evaluate(() => {
-      window.scrollTo(0, document.body.scrollHeight);
-      return document.body.scrollHeight;
-    });
-    await page.evaluate(() => {
-      window.scrollTo(0, document.body.scrollHeight);
-      return document.body.scrollHeight;
-    });
+    // await page.evaluate(() => {
+    //   window.scrollTo(0, document.body.scrollHeight);
+    //   return document.body.scrollHeight;
+    // });
+    // await page.evaluate(() => {
+    //   window.scrollTo(0, document.body.scrollHeight);
+    //   return document.body.scrollHeight;
+    // });
+    // await page.evaluate(() => {
+    //   window.scrollTo(0, document.body.scrollHeight);
+    //   return document.body.scrollHeight;
+    // });
 
-    await loadFullPage(page);
+    // await loadFullPage(page);
 
     console.log("Début de récupération des balises");
 

@@ -2,6 +2,8 @@ const puppeteer = require("puppeteer");
 const User = require("../objects/User.js");
 const Offer = require("../objects/Offer.js");
 const PARAMS = require("../settings/parameters.json");
+// const FileSystem = require("fs");
+// const Axios = require()
 
 // const ADDRESS = "https://www.vinted.fr/member/17295984-emma0626";
 

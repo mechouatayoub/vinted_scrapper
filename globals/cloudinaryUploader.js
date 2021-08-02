@@ -1,15 +1,15 @@
 const axios = require("axios");
 const fsAsync = require("fs/promises");
 const fsSync = require("fs");
-const USERS = require("../exports/updatedUsers.json"); // temporaire
+// const USERS = require("../exports/updatedUsers.json"); // temporaire
 // const PICTURES = require("../exports/picturesLocations.json"); // temporaire
 const Cloudinary = require("cloudinary").v2;
 const Picture = require("../objects/Picture.js");
 
 Cloudinary.config({
-  api_key: "252896966134385",
-  cloud_name: "dkgzv7huz",
-  api_secret: "ooHcO7Y2UwUEzGBDpLJfojaI4dA",
+  api_key: process.env.CLOUDINARY_API_KEY,
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
   // secure: true,
 });
 

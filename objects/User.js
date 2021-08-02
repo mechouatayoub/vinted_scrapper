@@ -3,7 +3,8 @@ function User(profilLink) {
   this.profilLink = profilLink;
   this.nickName = profilLink.split("-")[profilLink.split("-").length - 1];
   this.avatarLink = null;
-
+  this.downloadedAvatar = [];
+  this.uploadedAvatar = [];
   this.assessmentsCount = null;
   this.averageScore = null;
   this.city = null;

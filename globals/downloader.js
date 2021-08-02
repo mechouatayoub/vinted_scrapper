@@ -2,7 +2,7 @@ const axios = require("axios");
 const fsAsync = require("fs/promises");
 const fsSync = require("fs");
 const USERS = require("../exports/updatedUsers.json"); // temporaire
-const PICTURES = require("../exports/picturesLocations.json"); // temporaire
+// const PICTURES = require("../exports/picturesLocations.json"); // temporaire
 const Cloudinary = require("cloudinary").v2;
 const Picture = require("../objects/Picture.js");
 
@@ -13,39 +13,92 @@ Cloudinary.config({
   // secure: true,
 });
 
-async function uploadToCloudinary(picturesLocations) {
-  try {
-    console.log("Début de chargement sur cloudinary des images");
-
-    for (let pic of picturesLocations) {
-      await uploadPictureToCloudinary(pic);
+main(USERS);
+async function main(users) {
+  //Télécharger les images à partir de Vinted
+  let pics = await downloadImages(users);
+  //Sauvegarde des users en json après téléchargement des images de Vinted
+  let localPicsStringyfied = JSON.stringify(users, null, 2);
+  fsSync.writeFile(
+    "./exports/usersLocalLocations.json",
+    localPicsStringyfied,
+    (error) => {
+      console.log("error while writing");
     }
-    let picsStringyfied = JSON.stringify(PICTURES, null, 2);
-    fsSync.writeFile(
-      "./exports/picturesCloudinaryLocations.json",
-      picsStringyfied,
-      (error) => {
-        console.log("error while writing");
-      }
-    );
-    console.log("end");
-  } catch (error) {
-    console.log(error.message);
-  }
+  );
+  //Télécharger les images sur Cloudinary
+  // await uploadToCloudinary(pics);
+  await uploadToCloudinary(users);
+  //Sauvegarde des users après téléchargement des images sur Cloudinary
+  let cloudinaryPicsStringyfied = JSON.stringify(users, null, 2);
+  fsSync.writeFile(
+    "./exports/usersCloudinaryLocations.json",
+    cloudinaryPicsStringyfied,
+    (error) => {
+      console.log("error while writing");
+    }
+  );
 }
 
-uploadToCloudinary(PICTURES);
-async function uploadPictureToCloudinary(picture) {
-  console.log(
-    `Début de chargement de l'image (${picture.fullLocalPath}) sur cloudinary`
-  );
+async function uploadToCloudinary(users) {
+  //Charge l'ensemble des images sur Cloudinary
   try {
+    console.log("Début du transfert des images sur cloudinary");
+
+    for (let user of users) {
+      //télécharger sur cloudinary l'avatar et mettre à jour les données de l'avatar
+      if (user.downloadedAvatar) {
+        user.uploadedAvatar = await uploadPictureToCloudinary(
+          user.downloadedAvatar
+        );
+      }
+
+      for (let offer of user.offers) {
+        //Télécharger pour chaque offre les images sur Cloudinary et les mettre à jour
+        offer.uploadedPictures = [];
+        for (let downlodedPic of offer.downloadedPictures) {
+          let uploadedPicture = await uploadPictureToCloudinary(downlodedPic);
+          offer.uploadedPictures.push(uploadedPicture);
+        }
+      }
+    }
+  } catch (error) {
+    console.log("Les images n'ont pu être chargées sur Cloudinary");
+    console.log("Car:", error.message);
+  }
+  console.log("Fin du transfert des images sur Cloudinary");
+}
+
+// async function uploadToCloudinary(picturesLocations) {
+//   //Charge l'ensemble des images sur Cloudinary
+//   try {
+//     console.log("Début du transfert des images sur cloudinary");
+
+//     for (let pic of picturesLocations) {
+//       await uploadPictureToCloudinary(pic);
+//     }
+//   } catch (error) {
+//     console.log("Les images n'ont pu être chargées sur Cloudinary");
+//     console.log("Car:", error.message);
+//   }
+//   console.log("Fin du transfert des images sur Cloudinary");
+// }
+
+async function uploadPictureToCloudinary(picture) {
+  //Charge une seule image sur Cloudinary
+  console.log(
+    `Début du chargement de l'image (${picture.fullLocalPath}) sur cloudinary`
+  );
+
+  let uploadedPicture = null;
+  try {
+    //Construction du chemin de sauvegarde de l'image dans Cloudinary
     let splittedFullPath = picture.fullLocalPath.split("/");
     let startingPathPosition = splittedFullPath.indexOf("images");
     let imageFolderPath = "";
     if (startingPathPosition) {
       imageFolderPath =
-        "Vinted/" +
+        "Vinted/by_users_" +
         splittedFullPath
           .slice(startingPathPosition, splittedFullPath.length - 1)
           .join("/");
@@ -56,8 +109,8 @@ async function uploadPictureToCloudinary(picture) {
       public_id: picture.name,
     });
 
-    picture.cloudinaryDescriptors = response;
-    console.log(picture);
+    uploadedPicture = { ...picture };
+    uploadedPicture.cloudinaryDescriptors = response;
   } catch (error) {
     FolderPath;
     console.log(
@@ -68,42 +121,84 @@ async function uploadPictureToCloudinary(picture) {
   console.log(
     `Fin de chargement de l'image (${picture.fullLocalPath}) sur cloudinary`
   );
+  return uploadedPicture;
 }
 
-// async function testCloudinary() {
-//   console.log(PICTURES[1]);
-//   await uploadPictureToCloudinary(PICTURES[1]);
-// }
-
-// testCloudinary();
-
-async function createDirectory(relativePath) {
-  //fonction pour créer un répertoire
-  let directoryPath = null;
-  let tempDirectoryPath = cdPath() + relativePath;
+async function downloadImages(users) {
+  let pictures = [];
   try {
-    await fsAsync.mkdir(tempDirectoryPath, { recursive: true }); // si le répertoire existe le contenu n'est pas modifié
-    directoryPath = tempDirectoryPath;
-
-    console.log(`Répertoire ${directoryPath} a été crée.`);
-  } catch (error) {
+    let cb = (err) => {
+      if (err) throw err;
+    };
+    // Création du dossier d'images
+    let imagesDirectoryRelativePath = "/exports/images";
+    // let imagesDirectoryFullPath =
+    await createDirectory(imagesDirectoryRelativePath);
     console.log(
-      `Répertoire ${tempDirectoryPath} n'a pas été créé car : ${error.message}`
+      `Le dossier ${imagesDirectoryRelativePath} sera destiné au téléchargement des images.`
     );
+    for (let user of users) {
+      //Création d'un dossier pour chaque utilisateur
+
+      let userId = user.profilLink.split("/").pop().split("-")[0]; //identifiant vinted
+      let userDirectoryRelativePath =
+        imagesDirectoryRelativePath + "/user_" + userId; // chemin relative du dossier
+      let userDirectoryFullPath = await createDirectory(
+        userDirectoryRelativePath
+      );
+      console.log(`Le dossier ${userDirectoryFullPath} a été crée.`);
+      console.log(
+        `Début du téléchagement des assets pour l'utilisateur ${user.nickName} / id: ${userId}`
+      );
+      console.log(
+        `Lien de l'avatar pour le téléchargement : ${user.avatarLink}`
+      );
+
+      //téléchargement de l'avatar dans le dossier
+      let avatarRelativPath = "/avatar_pic_" + userId + ".jpeg";
+      let avatarFullPath = userDirectoryFullPath + avatarRelativPath;
+      let avatarLink = user.avatarLink;
+      if (user.avatarLink === "/assets/no-photo/user-empty-state.svg") {
+        avatarLink =
+          "https://www.vinted.fr/assets/no-photo/user-empty-state.svg";
+      }
+      let avatar = new Picture(avatarLink);
+      await createImage(avatar, avatarFullPath);
+      if (avatar.fullLocalPath) {
+        pictures.push(avatar);
+        user.downloadedAvatar = avatar;
+      }
+
+      for (let offer of user.offers) {
+        offer.downloadedPictures = [];
+        let offerId = offer.link.split("/").pop().split("-")[0];
+        let offerDirectoryRelativePath =
+          userDirectoryRelativePath + "/offer_" + offerId;
+        let offerDirectoryFullPath = await createDirectory(
+          offerDirectoryRelativePath
+        );
+        let pictureId = 0;
+        for (let pic of offer.pictures) {
+          let picture = new Picture(pic);
+          let pictureRelativePath = "/item_pic_" + pictureId + ".jpeg";
+          let pictureFullPath = offerDirectoryFullPath + pictureRelativePath;
+          await createImage(picture, pictureFullPath);
+          pictureId = pictureId + 1;
+          if (picture.fullLocalPath) {
+            pictures.push(picture);
+            offer.downloadedPictures.push(picture);
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.log(error.message);
   }
-  console.log("Fin de la fonction de création de répertoire");
-  return directoryPath;
+  return pictures;
 }
 
-function cdPath() {
-  //Récupère le chemin d'accès au répertoire du projet
-  return process.cwd();
-}
-
-// createDirectory("/images3");
-
-async function createImage(picture = new Picture(), toImageFullPath) {
-  //Récupère l'image sur internet et l'écri à l'endroit souhaité
+async function createImage(picture, toImageFullPath) {
+  //Récupère l'image sur le site de Vinted et les enregistrent en local
 
   console.log(
     `--->Début d'éxcution pour ${
@@ -145,118 +240,25 @@ async function createImage(picture = new Picture(), toImageFullPath) {
   }, timeSeed);
 }
 
-async function downloadImages(users) {
-  let pictures = [];
+async function createDirectory(relativePath) {
+  //Fonction pour créer un répertoire à la racine du projet
+  let directoryPath = null;
+  let tempDirectoryPath = cdPath() + relativePath;
   try {
-    let cb = (err) => {
-      if (err) throw err;
-    };
-    // Création du dossier d'images
-    let imagesDirectoryRelativePath = "/images";
-    // let imagesDirectoryFullPath =
-    await createDirectory(imagesDirectoryRelativePath);
-    console.log(
-      `Le dossier ${imagesDirectoryRelativePath} sera destiné au téléchargement des images.`
-    );
-    for (let user of users) {
-      //Création d'un dossier pour chaque utilisateur
+    await fsAsync.mkdir(tempDirectoryPath, { recursive: true }); // si le répertoire existe le contenu n'est pas modifié
+    directoryPath = tempDirectoryPath;
 
-      let userId = user.profilLink.split("/").pop().split("-")[0]; //identifiant vinted
-      let userDirectoryRelativePath =
-        imagesDirectoryRelativePath + "/" + userId; // chemin relative du dossier
-      let userDirectoryFullPath = await createDirectory(
-        userDirectoryRelativePath
-      );
-      console.log(`Le dossier ${userDirectoryFullPath} a été crée.`);
-      console.log(
-        `Début du téléchagement des assets pour l'utilisateur ${user.nickName} / id: ${userId}`
-      );
-      console.log(
-        `Lien de l'avatar pour le téléchargement : ${user.avatarLink}`
-      );
-
-      //téléchargement de l'avatar dans le dossier
-      let avatarRelativPath = "/" + userId + ".jpeg";
-      let avatarFullPath = userDirectoryFullPath + avatarRelativPath;
-      let avatarLink = user.avatarLink;
-      if (user.avatarLink === "/assets/no-photo/user-empty-state.svg") {
-        avatarLink =
-          "https://www.vinted.fr/assets/no-photo/user-empty-state.svg";
-      }
-      let avatar = new Picture(avatarLink);
-      await createImage(avatar, avatarFullPath);
-      if (avatar.fullLocalPath) {
-        pictures.push(avatar);
-      }
-
-      for (let offer of user.offers) {
-        let offerId = offer.link.split("/").pop().split("-")[0];
-        let offerDirectoryRelativePath =
-          userDirectoryRelativePath + "/" + offerId;
-        let offerDirectoryFullPath = await createDirectory(
-          offerDirectoryRelativePath
-        );
-        let pictureId = 0;
-        for (let pic of offer.pictures) {
-          let picture = new Picture(pic);
-          let pictureRelativePath = "/" + pictureId + ".jpeg";
-          let pictureFullPath = offerDirectoryFullPath + pictureRelativePath;
-          await createImage(picture, pictureFullPath);
-          pictureId = pictureId + 1;
-          if (picture.fullLocalPath) {
-            pictures.push(picture);
-          }
-        }
-      }
-    }
+    console.log(`Répertoire ${directoryPath} a été crée.`);
   } catch (error) {
-    console.log(error.message);
+    console.log(
+      `Répertoire ${tempDirectoryPath} n'a pas été créé car : ${error.message}`
+    );
   }
-  return pictures;
+  console.log("Fin de la fonction de création de répertoire");
+  return directoryPath;
 }
 
-async function main() {
-  let pics = await downloadImages(USERS);
-  console.log(pics);
-  let picsStringyfied = JSON.stringify(pics, null, 2);
-  fsSync.writeFile(
-    "./exports/picturesLocations.json",
-    picsStringyfied,
-    (error) => {
-      console.log("error while writing");
-    }
-  );
+function cdPath() {
+  //Récupère le chemin d'accès au répertoire du projet
+  return process.cwd();
 }
-
-// main();
-
-// async function test() {
-//   // let picture1 = new Picture(
-//   //   "https://images1.vinted.net/t/03_00094_RRBTLPjHg47SLZhPq5NufD5r/f800/1627754772.jpeg?s=5a45c67c00a9e96e0789e9639d49672f94e59126"
-//   // );
-//   // let picture2 = new Picture(
-//   //   "https://images1.vinted.net/t/03_00823_MhZx3DrfkVjUcwDHxitQBceP/f800/1627743474.jpeg?s=0ad2c5acabfa3784e6ba4c6cece97fc632c47dd8"
-//   // );
-//   let picture3 = new Picture(
-//     "https://images1.vinted.net/t/03_0171b_HhbMfsP2FCWsagXnhow76PWd/f800/1621362749.jpeg?s=403f5da0ebd0420b968eb2583093804d60f2ae99"
-//   );
-//   // await createImage(
-//   //   picture1,
-//   //   "/Users/ayoubmechouat/LeReacteur/S_React/S2/OnTime/Vinted/scrapper/images3/im1.jpeg"
-//   // );
-
-//   // await createImage(
-//   //   picture2,
-//   //   "/Users/ayoubmechouat/LeReacteur/S_React/S2/OnTime/Vinted/scrapper/images3/im2.jpeg"
-//   // );
-//   await createImage(
-//     picture3,
-//     "/Users/ayoubmechouat/LeReacteur/S_React/S2/OnTime/Vinted/scrapper/images/29803536/29803536.jpg"
-//   );
-//   // console.log("image 1:", picture1);
-//   // console.log("image 2:", picture2);
-//   console.log("image 3:", picture3);
-//   console.log("fin");
-// }
-
-// test();

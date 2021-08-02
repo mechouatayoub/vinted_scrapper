@@ -13,7 +13,7 @@ Cloudinary.config({
   // secure: true,
 });
 
-main(USERS);
+// main(USERS); // pour tester le module
 async function main(users) {
   //Télécharger les images à partir de Vinted
   let pics = await downloadImages(users);
@@ -68,21 +68,6 @@ async function uploadToCloudinary(users) {
   }
   console.log("Fin du transfert des images sur Cloudinary");
 }
-
-// async function uploadToCloudinary(picturesLocations) {
-//   //Charge l'ensemble des images sur Cloudinary
-//   try {
-//     console.log("Début du transfert des images sur cloudinary");
-
-//     for (let pic of picturesLocations) {
-//       await uploadPictureToCloudinary(pic);
-//     }
-//   } catch (error) {
-//     console.log("Les images n'ont pu être chargées sur Cloudinary");
-//     console.log("Car:", error.message);
-//   }
-//   console.log("Fin du transfert des images sur Cloudinary");
-// }
 
 async function uploadPictureToCloudinary(picture) {
   //Charge une seule image sur Cloudinary
@@ -262,3 +247,5 @@ function cdPath() {
   //Récupère le chemin d'accès au répertoire du projet
   return process.cwd();
 }
+
+module.exports = main;

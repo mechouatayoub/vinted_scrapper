@@ -4,6 +4,7 @@ const offerPageScraper = require("./pageScrapers/offerPageScraper.js");
 const FileSystem = require("fs");
 const Review = require("./objects/Review.js");
 const generateComments = require("./globals/helpers.js");
+const uploadToCloudinary = require("./globals/cloudinaryUploader.js");
 //TODOS:
 //donload images
 //persisting images in jsons
@@ -14,6 +15,7 @@ async function main() {
   let updatedUsers = [];
 
   try {
+    ////////////////////////////SCRAPPING
     //appeller le welcome scraper
 
     let users = await welcomeScraper();
@@ -41,6 +43,9 @@ async function main() {
       j = j + 1;
     }
     bindCommentsToUsers(updatedUsers);
+
+    ////////UPLOADING TO CLOUDINARY
+    await uploadToCloudinary(updatedUsers);
   } catch (error) {
     console.log(error.message);
   }

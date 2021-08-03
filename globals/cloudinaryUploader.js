@@ -6,6 +6,7 @@ const fsSync = require("fs");
 const Cloudinary = require("cloudinary").v2;
 const Picture = require("../objects/Picture.js");
 const dotEnv = require("dotenv").config();
+const PARAMS = require("../settings/parameters.json");
 
 Cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -90,7 +91,8 @@ async function uploadPictureToCloudinary(picture) {
     let imageFolderPath = "";
     if (startingPathPosition) {
       imageFolderPath =
-        "Vinted/by_users_" +
+        PARAMS.VINTED_ROOT +
+        "/by_users_" +
         splittedFullPath
           .slice(startingPathPosition, splittedFullPath.length - 1)
           .join("/");

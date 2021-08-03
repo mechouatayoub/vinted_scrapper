@@ -5,6 +5,7 @@ const fsSync = require("fs");
 // const PICTURES = require("../exports/picturesLocations.json"); // temporaire
 const Cloudinary = require("cloudinary").v2;
 const Picture = require("../objects/Picture.js");
+const dotEnv = require("dotenv").config();
 
 Cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -12,9 +13,15 @@ Cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
   // secure: true,
 });
+console.log(
+  process.env.CLOUDINARY_API_KEY,
+  process.env.CLOUDINARY_CLOUD_NAME,
+  process.env.CLOUDINARY_API_SECRET
+);
 
 // main(USERS); // pour tester le module
 async function main(users) {
+  console.log("Module de Cloudinary");
   //Télécharger les images à partir de Vinted
   let pics = await downloadImages(users);
   //Sauvegarde des users en json après téléchargement des images de Vinted
@@ -27,7 +34,7 @@ async function main(users) {
     }
   );
   //Télécharger les images sur Cloudinary
-  // await uploadToCloudinary(pics);
+
   await uploadToCloudinary(users);
   //Sauvegarde des users après téléchargement des images sur Cloudinary
   let cloudinaryPicsStringyfied = JSON.stringify(users, null, 2);
@@ -97,7 +104,6 @@ async function uploadPictureToCloudinary(picture) {
     uploadedPicture = { ...picture };
     uploadedPicture.cloudinaryDescriptors = response;
   } catch (error) {
-    FolderPath;
     console.log(
       `Impossible de charger l'image (${picture.fullLocalPath}) sur cloudinary`
     );

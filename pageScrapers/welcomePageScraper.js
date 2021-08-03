@@ -38,7 +38,7 @@ async function getVintedMainPage() {
     //   return document.body.scrollHeight;
     // });
 
-    // await loadFullPage(page);
+    await loadFullPage(page);
 
     console.log("Début de récupération des balises");
 
@@ -47,7 +47,7 @@ async function getVintedMainPage() {
 
     users = await scrapMainPage(page);
     FileSystem.writeFile(
-      "UsersLinks.json",
+      "./exports/UsersLinks.json",
       JSON.stringify(users, null, 2),
       (error) => {
         console.log(

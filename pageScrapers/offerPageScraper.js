@@ -105,7 +105,7 @@ async function getShippingPrices(page) {
   let shippingPrices = [];
   let shippingMeanContainerXPath =
     "//div[@class='details-list__item details-list--badges']/.//div[@class='Cell_content__2bRVC']";
-  let shippingDataXPath = ".//span";
+  let shippingDataXPath = ".//h3";
   try {
     let shippingContainersElements = await page.$x(shippingMeanContainerXPath);
     for (let shippingElement of shippingContainersElements) {
@@ -195,7 +195,7 @@ async function getTitle(page) {
   console.log("--> début de récupération le titre de l'offre");
   let title = null;
   let titleXPath =
-    "//div[@class='details-list details-list--info']/.//div[@itemprop='name']/span";
+    "//div[@class='details-list details-list--info']/.//div[@itemprop='name']/h2";
 
   try {
     let titleElement = await page.$x(titleXPath);

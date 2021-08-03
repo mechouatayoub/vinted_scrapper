@@ -15,6 +15,7 @@ const encBase64 = require("crypto-js/enc-base64");
 // main(users);
 
 async function main(users) {
+  console.log("Module de Mongo DB");
   await mongoose.connect(
     `mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWORD}@cluster0.kz885.mongodb.net/${SETTINGS.MONGODB_NAME}?retryWrites=true&w=majority`,
     { useNewUrlParser: true, useUnifiedTopology: true }

@@ -166,7 +166,7 @@ async function getUserLocation(page) {
   console.log("--> début de récupération de la localisation de l'utilisateur");
   let location = { city: null, country: null };
   let locationXPath =
-    "//span[contains(text(),'À propos :')]/..//div[@class='Cell_body__10a_u']";
+    "//h4[contains(text(),'À propos :')]/..//div[@class='Cell_body__10a_u']";
   try {
     let locationPossibleElements = await page.$x(locationXPath);
 
@@ -275,7 +275,7 @@ async function getVerified(page) {
   console.log("--> début de récupération des vérifications de profil ");
   let verifications = [];
   let verificationsXPath =
-    "//span[contains(text(),'Information')]/..//div[@class='Cell_body__10a_u']";
+    "//h4[contains(text(),'Information')]/..//div[@class='Cell_body__10a_u']";
 
   try {
     let verficationElements = await page.$x(verificationsXPath);

@@ -1,8 +1,8 @@
 {
-  "MAX_USERS": 10,
-  "MAX_OFFERS_PER_USER": 3,
-  "MAX_IMAGES_PER_OFFER": 2,
+  "MAX_USERS": 20,
+  "MAX_OFFERS_PER_USER": 5,
+  "MAX_IMAGES_PER_OFFER": 5,
   "VINTED_WELCOME_PAGE": "https://www.vinted.fr/",
-  "MAX_COMMENTS_PER_VENDOR": 3,
+  "MAX_COMMENTS_PER_VENDOR": 15,
   "MONGODB_NAME": "vinted_clone"
 }

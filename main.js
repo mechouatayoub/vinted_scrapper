@@ -5,6 +5,8 @@ const FileSystem = require("fs");
 const Review = require("./objects/Review.js");
 const generateComments = require("./globals/helpers.js");
 const uploadToCloudinary = require("./globals/cloudinaryUploader.js");
+const dotEnv = require("dotenv").config();
+const uploadToMongDB = require("./globals/mongoDBUploader.js");
 //TODOS:
 //donload images
 //persisting images in jsons
@@ -24,12 +26,16 @@ async function main() {
 
     let j = 0;
     for (let user of users) {
+      console.log("sSSSSSScrapping user:", j);
       let updatedUser = await userPageScraper(user.profilLink);
       //Appel le scrapper d'offres
       let updatedOffers = [];
+      let i = 0;
       for (let offer of updatedUser.offers) {
+        console.log("SSSSScrapping Offer:", i);
         let updatedOffer = await offerPageScraper(offer.link);
         updatedOffers.push(updatedOffer);
+        i = i + 1;
       }
       //Save users
       updatedUser.offers = updatedOffers;
@@ -42,10 +48,22 @@ async function main() {
       }, timeSeed);
       j = j + 1;
     }
+    FileSystem.writeFile(
+      "./exports/usersupToDate.json",
+      JSON.stringify(users, null, 2),
+      (error) => {
+        console.log(
+          "Une erreur est survenur lors de l'écriture du fichier userslinks.js"
+        );
+      }
+    );
     bindCommentsToUsers(updatedUsers);
 
     ////////UPLOADING TO CLOUDINARY
     await uploadToCloudinary(updatedUsers);
+
+    ///////UPLOADING TO MONGO DB
+    await uploadToMongDB(updatedUsers);
   } catch (error) {
     console.log(error.message);
   }
@@ -64,15 +82,22 @@ function bindCommentsToUsers(users) {
   console.log("binding comments to users");
   let i = 0;
   for (let user of users) {
-    console.log("Binding user:", i);
+    console.log("Binding user:", i, user.profilLink);
     let j = 0;
     for (let offer of user.offers) {
       let blackList = [];
       console.log("Binding offer:", j);
       let comments = generateComments();
+      console.log("all comments:", comments);
       let k = 0;
       for (let comment of comments) {
-        console.log("Binding comment:", k, "out of :", comments.length);
+        console.log(
+          "Binding comment:",
+          k,
+          "out of :",
+          comments.length,
+          comment
+        );
         let userHasCommentedOffer = true;
         while (userHasCommentedOffer) {
           let pickedUserId = Math.trunc(Math.random() * users.length);
